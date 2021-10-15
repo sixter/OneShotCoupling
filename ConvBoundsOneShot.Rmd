@@ -12,7 +12,7 @@ library(tidyverse)
 library(matlib)
 ```
 
-## An example of a non linear autoregressive process
+# An example of a non linear autoregressive process
 
 ```{r}
 # D^2 = - inf funcMin(x,y)
@@ -206,7 +206,7 @@ ceiling(n)
 ```
 
 
-#LARCH model
+# LARCH model
 
 Calculation to find the number of iterations needed to guarantee a TV of $0.01$ when $x_0=0.1$ and $x'_0=1.1$.
 ```{r}
@@ -280,7 +280,7 @@ df %>%
 ```
 
 
-#Asymmetric ARCH model
+# Asymmetric ARCH model
 
 Code to generate figure 3.
 ```{r}
