@@ -1,0 +1,4 @@
+"0","# Upper bound for sample AR normal process"
+"0","bound <- getBound(k, M, X0, Y0)"
+"2","Error in A - D : non-conformable arrays
+"

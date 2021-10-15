@@ -1,0 +1,7 @@
+"0","c <- 1.5"
+"0","b <- 2 * (pnorm(4*c/sqrt(3))-pnorm(2*c/sqrt(3)) )"
+"0","a <- 4*(c^2+1)/(c^2+10)"
+"0","rh <- (3+c^2)*( 1+pnorm(2*c/sqrt(3))-pnorm(4*c/sqrt(3))-pnorm(-2*c/sqrt(3)) )"
+"0","rh <- (2*((3+c^2)/4)+1)/(1-b)^2 #rh is bounded above by E[x^2+y^2+1|x=c, y=-c]"
+"0","eh <- 4"
+"0","G <- max(1, a*(1-b)*rh)"

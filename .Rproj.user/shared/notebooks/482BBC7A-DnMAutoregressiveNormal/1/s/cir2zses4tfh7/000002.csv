@@ -1,0 +1,7 @@
+"0","df <- data.frame(k, bound)"
+"0","df %>% "
+"0","  filter(k>0) %>% "
+"0","  ggplot(aes(x=k, y=bound)) +"
+"0","  geom_line() +"
+"0","  labs(title = ""Upper bound on the TV distance of two AR normal processes"", subtitle = ""When the covariance is 0.5, dim = 2"", "
+"0","       y = ""Upper bound on TV distance"", x = ""iteration"")"

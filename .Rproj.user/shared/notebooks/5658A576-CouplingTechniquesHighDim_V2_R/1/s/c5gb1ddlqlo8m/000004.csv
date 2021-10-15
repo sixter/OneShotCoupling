@@ -1,0 +1,6 @@
+"0","n <- 10"
+"0","bound <- d/sqrt(2*pi) * norm(inv(sigma), ""F"") * norm(P, ""F"") * norm(inv(P), ""F"") * sqrt(sum(X^2)) * max(eigenM$values)^n"
+"0",""
+"0","C <- d/sqrt(2*pi) * norm(inv(sigma), ""F"") * norm(P, ""F"") * norm(inv(P), ""F"") * sqrt(sum(X^2))"
+"0","r <- max(eigenM$values)"
+"0","n <- log(0.01/C)/log(r)"

@@ -1,0 +1,5 @@
+"0","k <- 1:1000"
+"0","d <- floor(sqrt(k))"
+"0","j <- getJ2(k, d)"
+"2","Error in getJ2(k, d) : argument ""eh"" is missing, with no default
+"

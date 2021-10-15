@@ -1,0 +1,27 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1622729169288.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "F147E1CF",
+    "lastKnownWriteTime" : 1624452287,
+    "last_content_update" : 1624452288422,
+    "path" : "C:/Projects/SabrinaSixta/public_html/resources/pdf/Research/Research proposal/CouplingTechniquesHighDim_V2_R/CouplingTechniquesHighDim_V2_R.Rmd",
+    "project_path" : "CouplingTechniquesHighDim_V2_R.Rmd",
+    "properties" : {
+        "cursorPosition" : "116,18",
+        "last_setup_crc32" : "15509B113fad7dd2",
+        "scrollLine" : "107",
+        "tempName" : "Untitled1"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}

@@ -1,0 +1,11 @@
+"0","library(bayesAB)"
+"2","package ‘bayesAB’ was built under R version 3.6.3"
+"2","
+Attaching package: ‘bayesAB’
+
+"
+"2","The following objects are masked from ‘package:dplyr’:
+
+    combine, rename
+
+"

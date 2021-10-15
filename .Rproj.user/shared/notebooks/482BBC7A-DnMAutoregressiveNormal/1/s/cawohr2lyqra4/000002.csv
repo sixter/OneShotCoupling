@@ -1,0 +1,6 @@
+"0","df <- data.frame(d, n)"
+"0","df %>% "
+"0","  ggplot(aes(x=d, y=n)) +"
+"0","  geom_line() +"
+"0","  labs(title = ""Number of iterations to obtain a total variation distance of less than 0.01"", subtitle = ""Over varying dimensions"", "
+"0","       y = ""Number of iterations"", x = ""dimension"")"

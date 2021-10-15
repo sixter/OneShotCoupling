@@ -1,0 +1,3 @@
+"0","m <- function(t, mu, sigma){"
+"0","  return(exp(mu*t + sigma^2*t^2/2))"
+"0","}"

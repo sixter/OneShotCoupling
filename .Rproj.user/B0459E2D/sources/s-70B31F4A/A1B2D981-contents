@@ -1,0 +1,841 @@
+---
+title: "DnMNormalAutoregessive"
+author: "Sabrina Sixta"
+date: "05/11/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(viridis)
+library(matlib)
+```
+
+## Coupling
+
+```{r}
+x <- seq(-4,6,by=0.01)
+norm0 <- dnorm(x, mean = 0, sd = 1)
+norm1 <- dnorm(x, mean = 1, sd = 1)
+
+df <- data.frame(x, norm0 = norm0, norm1 = norm1)
+df %>% 
+  pivot_longer(norm0:norm1,names_to = "pdf", values_to = "density") %>% 
+  ggplot(aes(x=x, y=density, fill=pdf)) + 
+  geom_area(alpha=0.5, position = "identity", color="black") +
+  geom_vline(xintercept = 0, linetype = "dotted") +
+  geom_vline(xintercept = 1, linetype = "dotted") +
+  labs(title = "Density of two normal distributions", subtitle = "With mean 0 and 1") +
+  scale_fill_discrete(name = "Distribution", labels = c("X~N(0, 1)", "X'~N(1, 1)"))  
+# scale_fill_viridis_d() +
+```
+
+
+## AR process with independent coordinates
+
+```{r}
+x <- seq(-5,5,by=0.01)
+normminus1 <- dnorm(x, mean = -1, sd = sqrt(3/4))
+norm1 <- dnorm(x, mean = 1, sd = sqrt(3/4))
+
+df <- data.frame(x, norm1 = normminus1, norm2 = norm1)
+df %>% 
+  pivot_longer(norm1:norm2,names_to = "pdf", values_to = "density") %>% 
+  ggplot(aes(x=x, y=density, fill=pdf)) + 
+  geom_area(alpha=0.6, position = "identity") +
+  geom_vline(xintercept = -1, linetype = "dotted") +
+  geom_vline(xintercept = 1, linetype = "dotted") +
+  labs(title = "Density of two normal distributions", subtitle = "With mean c= +-1") +
+  scale_fill_discrete(name = "Distribution", labels = c("N(-1, 3/4)", "N(1, 3/4)"))
+```
+```{r}
+c <- 1.5
+b <- 2 * (pnorm(4*c/sqrt(3))-pnorm(2*c/sqrt(3)) )
+a <- 4*(c^2+1)/(c^2+10)
+rh <- (3+c^2)*( 1+pnorm(2*c/sqrt(3))-pnorm(4*c/sqrt(3))-pnorm(-2*c/sqrt(3)) )
+rh <- (2*((3+c^2)/4)+1)/(1-b)^2 #rh is bounded above by E[x^2+y^2+1|x=c, y=-c]
+eh <- 4
+G <- max(1, a*(1-b)*rh)
+```
+
+
+```{r}
+getJ <- function(k){
+ return( (-k*log(a)-log(G)+log(eh)) / (log(1-b)-log(G)) )   
+}
+
+k <- 1:1000
+j <- getJ(k)
+df <- data.frame(k,j)
+df %>% 
+  ggplot(aes(x=k, y=j)) +
+  geom_line() +
+  labs(title = "Value of j and n", subtitle = "So that A=B", x = "n")
+```
+
+```{r}
+k <- 1:10000
+getBound <- function(k, d){
+  j <- getJ(k)
+  A <- (1-b)^j
+  bound <- 2*(1-(1-A)^(d-1))
+  return(bound)
+}
+
+bound <- getBound(k, k)
+```
+
+```{r}
+df <- data.frame(k, bound)
+df %>% 
+  filter(k>1500) %>% 
+  ggplot(aes(x=k, y=bound)) +
+  geom_line() +
+  labs(title = "Upper bound on the convergence rate", subtitle = "When d=n, d=dimension, n=number of iterations", 
+       y = "Convergence rate upper bound", x = "n (number of iterations)")
+```
+```{r}
+#d=dimension, t=threshold
+#returns the minimum number of iterations so that the total variation distance is less than 0.01
+getNumIterations <- function(d, t=0.01){
+  K <- 1-(1-t/2)^(1/(d-1))
+  n <- -( log(K)*(1-log(G)/log(1-b)) + log(G) -log(eh) )/(log(a))
+  n <- as.integer(n)+1
+  return(n)
+}
+
+d<-1:1000
+n <- getNumIterations(d,0.01)
+```
+
+```{r}
+df <- data.frame(d, n)
+df %>% 
+  ggplot(aes(x=d, y=n)) +
+  geom_line() +
+  labs(title = "Number of iterations to obtain a total variation distance of less than 0.01", subtitle = "Over varying dimensions", 
+       y = "Number of iterations", x = "dimension")
+```
+
+
+```{r}
+getJ2 <- function(k, d, a, b, rh, eh, G){
+  num <- log(eh*log(d*a*(1-b^d)*rh)) - log(-log(1-b^d)*a^(k+1)*(1-b^d)*rh)
+  denom <- log(1-b^d) - log(d*a*(1-b^d)*rh)
+  j <- pmax(pmin(num/denom,k),0)
+  return(j)
+}
+
+getBound2 <- function(k, d, c){
+  
+  b <- 2 * (pnorm(4*c/sqrt(3))-pnorm(2*c/sqrt(3)) )
+  a <- 4*(c^2+1)/(c^2+10)
+  rh <- (2*((3+c^2)/4)+1)/(1-b)^2 #rh is bounded above by E[x^2+y^2+1|x=c, y=-c]
+  eh <- 4
+  G <- a*(1-b)*rh
+  G <- ifelse(G<1, 1, G)
+  
+  j <- getJ2(k, d, a, b, rh, eh, G)
+  A <- (1-b^d)^j
+  B <- a^(-k) * G*d^(j-1) * (d * eh + 1)
+  bound <- A + B
+  return(bound)
+}
+
+```
+
+
+
+```{r}
+n <- 100
+d <- 1:n
+k <- d^2
+c <- sqrt(2*d + 4)
+bound <- getBound2(k, d, c) 
+
+df <- data.frame(d, bound)
+df %>% 
+  ggplot(aes(x=d, y=bound)) +
+  geom_line() +
+  labs(title = "Upper bound on the convergence rate", subtitle = "When d=k, d=dimension, k=number of iterations", 
+       y = "Convergence rate upper bound")
+```
+
+```{r}
+k <- 1:1000
+d <- floor(sqrt(k))
+j <- getJ2(k, d)
+
+bound <- getBound2(k, d, j) 
+
+df <- data.frame(k, bound)
+df %>% 
+  ggplot(aes(x=k, y=bound)) +
+  geom_line() +
+  labs(title = "Upper bound on the direct convergence rate", subtitle = "When d=sqrt(k), d=dimension, k=number of iterations", 
+       y = "Convergence rate upper bound")
+```
+
+```{r}
+qchisq(.5, df=1)
+qchisq(.5, df=2)
+qchisq(.5, df=3)
+qchisq(.5, df=4)
+qchisq(.5, df=5)
+qchisq(.5, df=6)
+```
+
+# AR process with non-independent coordinates but coupling at time n+d
+
+```{r}
+getBound_2d <- function(k, cov, x0, y0){
+  q1 <- -2^(-k+1)*abs(x0-y0)/sqrt(0.75*(1-cov^2))
+  e1 <- 2*pnorm(q1)
+  q2 <- -2^(-k)*abs(x0-y0)/sqrt(0.75*(1-cov^2))
+  e2 <- 2*pnorm(q2)
+  bound <- 1-e1*e2
+  return(bound)
+}
+
+
+k <- 1:50
+cov <- 0.5
+x0 <- 50
+y0 <- 100
+bound <- getBound_2d(k, 0.5, 5, 10)
+```
+
+```{r}
+df <- data.frame(k, bound)
+df %>% 
+  filter(k>0) %>% 
+  ggplot(aes(x=k, y=bound)) +
+  geom_line() +
+  labs(title = "Upper bound on the TV distance of two AR normal processes", subtitle = "When the covariance is 0.5, dim = 2", 
+       y = "Upper bound on TV distance", x = "iteration")
+```
+
+```{r}
+getBound_3d <- function(k, cov, x0, y0){
+  var <- 1-cov^2-(cov - cov^2)^2/(1-cov^2)
+  q1 <- -2^(-k+2)*abs(x0-y0)/sqrt(0.75*var)
+  e1 <- 2*pnorm(q1)
+  q2 <- -2^(-k+1)*abs(x0-y0)/sqrt(0.75*(1-cov^2))
+  e2 <- 2*pnorm(q2)
+  q3 <- -2^(-k)*abs(x0-y0)/sqrt(0.75*(1-cov^2))
+  e3 <- 2*pnorm(q3)
+  bound <- 1-e1*e2*e3
+  return(bound)
+}
+
+
+k <- 1:100
+cov <- 0.5
+x0 <- 5
+y0 <- 10
+bound <- getBound_3d(k, 0.5, 5, 10)
+```
+
+```{r}
+df <- data.frame(k, bound)
+df %>% 
+  filter(k>0) %>% 
+  ggplot(aes(x=k, y=bound)) +
+  geom_line() +
+  labs(title = "Upper bound on the TV distance of two AR normal processes", subtitle = "When the covariance is 0.5, dim = 3", 
+       y = "Upper bound on TV distance", x = "iteration")
+```
+
+
+
+```{r}
+A = as.matrix(data.frame(c(3,4,3),c(4,8,6),c(3,6,9)))
+colnames(A) <- NULL
+A
+```
+
+```{r}
+d <- 3
+A <- matrix(rep(0.5, d^2), nrow= d)
+diag(A) <- 1
+colnames(A) <- NULL
+A
+```
+
+```{r}
+chol(A)
+```
+
+```{r}
+1-cov^2-(cov - cov^2)^2/(1-cov^2)
+```
+
+```{r}
+A.chol <- chol(A)
+t(A.chol) %*% A.chol
+```
+
+```{r}
+A.chol[d,d]
+```
+
+```{r}
+library(lessR)
+
+# Returns the TV bound between two AR normal processes of X_N+1 = 0.5X_n + sqrt(3/4)Y, Cov(Y)=M  
+# X0, Y0 = vector of initial values
+# M = covariance matrix
+# k = iterations
+getBound <- function(k, M, X0, Y0){
+  d <- length(X0)
+  e <- matrix(rep(0,d*length(k)), ncol = length(k))
+  for (i in 1:d){
+    x0 <- X0[i]
+    y0 <- Y0[i]
+    cov <- getCov(i, M)
+    e[i,] <- getE(k-i+1, cov, x0, y0)
+  }
+  bound <- 1-apply(e, 2, prod)
+  return(bound)
+}
+
+# Returns the coupling bound when 
+getE <- function(k, cov, x0, y0){
+  q <- -2^(-k+2)*abs(x0-y0)/sqrt(0.75*cov)
+  e <- 2*pnorm(q)
+  return(e)
+}
+
+# Input covariance matrix M and index i returns a_d when
+# X_in = a1 Z_1n + a2 Z_2n + ... + ad Z_dn
+getCov <- function(i, M){
+    d <- dim(M)[2]
+    sequence <- 1:d
+    M <- corReorder(M, vars=c(sequence[-i],i))
+    M.chol <- chol(M)
+    cov <- M.chol[d,d]
+    return(cov)
+}
+
+```
+
+## Example 1
+```{r}
+d <- 3
+k <- 1:100
+M <- matrix(rep(0.5, d^2), nrow= d)
+diag(M) <- 1
+colnames(M) <- c("V1", "V2", "V3")
+rownames(M) <- colnames(M)
+X0 <- c(1,2,3)
+Y0 <- c(6,5,4)
+```
+
+```{r}
+# Upper bound for sample AR normal process
+bound <- getBound(k, M, X0, Y0)
+df <- data.frame(k, bound)
+df %>% 
+  filter(k>0) %>% 
+  ggplot(aes(x=k, y=bound)) +
+  geom_line() +
+  labs(title = "Upper bound on the TV distance of two AR normal processes", subtitle = "When the dim = 3, corr_ij = 0.5", 
+       y = "Upper bound on TV distance", x = "iteration")
+```
+
+## Example 2
+
+```{r}
+# Input values for sample AR normal process
+mycor <- matrix(nrow=6, ncol=6, byrow=TRUE,
+c(1.000,0.480,0.320,0.192,0.144,0.096,
+  0.480,1.000,0.240,0.144,0.108,0.072,
+  0.320,0.240,1.000,0.096,0.072,0.048,
+  0.192,0.144,0.096,1.000,0.480,0.320,
+  0.144,0.108,0.072,0.480,1.000,0.240,
+  0.096,0.072,0.048,0.320,0.240,1.000))
+colnames(mycor) <- c("V1", "V2", "V3", "V4", "V5", "V6")
+rownames(mycor) <- colnames(mycor)
+k <- 1:100
+M <- mycor
+X0 <- c(1,2,3,4,5,6)
+Y0 <- c(6,5,4,3,2,1)
+```
+
+```{r}
+# Upper bound for sample AR normal process
+bound <- getBound(k, mycor, X0, Y0)
+df <- data.frame(k, bound)
+df %>% 
+  filter(k>0) %>% 
+  ggplot(aes(x=k, y=bound)) +
+  geom_line() +
+  labs(title = "Upper bound on the TV distance of two AR normal processes", subtitle = "When the dim = 6", 
+       y = "Upper bound on TV distance", x = "iteration")
+```
+
+# Example 3 where the iteration increases with d
+
+```{r}
+d <- 10
+k <- 1:10
+M <- matrix(rep(0.5, d^2), nrow= d)
+diag(M) <- 1
+colnames(M) <- paste(1:d)
+rownames(M) <- colnames(M)
+X0 <- c(1,2,3)
+Y0 <- c(6,5,4)
+X0 <- 1*rep(1,d)
+Y0 <- 1.5*rep(1,d)
+bound <- getBound(k, M, X0, Y0)
+```
+```{r}
+bound
+```
+
+
+
+```{r}
+dim <- 10:50
+it <- 2*dim
+bound <- it
+for (j in 1:length(it)){
+  M <- matrix(rep(0.5, dim[j]^2), nrow= dim[j])
+  diag(M) <- 1
+  colnames(M) <- paste(1:dim[j])
+  rownames(M) <- colnames(M)
+  X0 <- 1*rep(1,dim[j])
+  Y0 <- (1/d)*rep(1,dim[j])
+  bound[j] <- getBound(it[j], M, X0, Y0)
+}
+```
+
+```{r}
+bound
+```
+
+
+```{r}
+# Upper bound for sample AR normal process when iteration=dimension
+df <- data.frame(k=it, bound)
+df %>% 
+  filter(k>0) %>% 
+  ggplot(aes(x=k, y=bound)) +
+  geom_line() +
+  labs(title = "Upper bound on the TV distance of two AR normal processes", subtitle = "When the dim = iteration/2, corr_ij = 0.5, ||x_0-y_0||=1", 
+       y = "Upper bound on TV distance", x = "iteration")
+```
+
+
+# AR process with non-independent coordinates but coupling all at the same time
+
+```{r}
+#library(lessR)
+
+# Returns the TV bound between two AR normal processes of X_N+1 = 0.5X_n + sqrt(3/4)Y, Cov(Y)=M  
+# X0, Y0 = vector of initial values
+# M = covariance matrix
+# k = iterations
+getBound <- function(k, M, X0, Y0){
+  d <- length(X0)
+  e <- matrix(rep(0,d*length(k)), ncol = length(k))
+  
+  A <- t(chol(M)) #A = D + L where D is a diagonal matrix, L a lower triangular matrix (with zeros along diagonal)
+  D <- diag(diag(A), nrow=d, ncol=d) # D provides the variances for each coordinate
+  m <- getm(A, D, d) # m provides the mean for each coordinate
+  for (i in 1:d){
+    e[i,] <- getE(k, i, m, D)
+  }
+  bound <- 1-apply(e, 2, prod)
+  return(bound)
+}
+
+# Returns the coupling bound when 
+getE <- function(k, i, m, D){
+  q <- -2^(-k)*abs(m[i])/(sqrt(3)*D[i,i])
+  e <- 2*pnorm(q)
+  return(e)
+}
+
+getm <- function(A, D, d){
+  L <- A-D
+  MM <- L %*% inv(A)
+  m <- (diag(d)-MM) %*% (X0-Y0)
+  return(m)
+}
+
+```
+
+## Example 0
+Two dimensional Markov chain with correlation 0.5
+```{r}
+d <- 2
+k <- 1:10
+M <- matrix(rep(0.5, d^2), nrow= d)
+diag(M) <- 1
+colnames(M) <- c("V1", "V2")
+rownames(M) <- colnames(M)
+X0 <- c(1,2)
+Y0 <- c(6,5)
+```
+
+```{r}
+X0 <- c(1,2,3)
+Y0 <- c(6,5,4)
+```
+```{r}
+k <- 1:10
+e1 <- 2*pnorm(-5/(2^k*sqrt(3)))
+e2 <- 2*pnorm(-0.5/(2^k*sqrt(2.25)))
+e3 <- 2*pnorm(-5/(3*2^k*sqrt(2)))
+1-e1*e2*e3
+```
+
+
+
+```{r}
+# Upper bound for sample AR normal process
+bound <- getBound(k, M, X0, Y0)
+df <- data.frame(k, bound)
+df %>%
+  filter(k>0) %>%
+  ggplot(aes(x=k, y=bound)) +
+  geom_line() +
+  labs(title = "Upper bound on the TV distance of two AR normal processes", subtitle = "When the dim = 3, corr_ij = 0.5",
+       y = "Upper bound on TV distance", x = "iteration")
+```
+
+```{r}
+  d <- length(X0)
+  e <- matrix(rep(0,d*length(k)), ncol = length(k))
+
+  A <- t(chol(M)) #A = D + L where D is a diagonal matrix, L a lower triangular matrix (with zeros along diagonal)
+  D <- diag(diag(A), nrow=d, ncol=d) # D provides the variances for each coordinate
+  m <- getm(A, D, d) # m provides the mean for each coordinate
+```
+```{r}
+d <- 2
+M <- matrix(rep(0.5, d^2), nrow= d)
+diag(M) <- 1
+A2 <- t(chol(M))
+D2 <- diag(diag(A2), nrow=d, ncol=d) # D provides the variances for each coordinate
+#m2 <- getm(A2, D2, d)
+
+d <- 3
+M <- matrix(rep(0.5, d^2), nrow= d)
+diag(M) <- 1
+A3 <- t(chol(M))
+D3 <- diag(diag(A3), nrow=d, ncol=d) # D provides the variances for each coordinate
+m3 <- getm(A3, D3, d)
+
+A2
+A3
+```
+
+```{r}
+L <- A3-D3
+  MM <- L %*% inv(A3)
+(diag(d)-MM)
+```
+```{r}
+X0
+Y0
+```
+
+
+```{r}
+# getBound <- function(k, M, X0, Y0){
+#   d <- length(X0)
+#   e <- matrix(rep(0,d*length(k)), ncol = length(k))
+#   
+#   A <- t(chol(M)) #A = D + L where D is a diagonal matrix, L a lower triangular matrix (with zeros along diagonal)
+#   D <- diag(diag(A), nrow=d, ncol=d) # D provides the variances for each coordinate
+#   m <- getm(A, D, d) # m provides the mean for each coordinate
+#   for (i in 1:d){
+#     e[i,] <- getE(k, i, m, D)
+#   }
+#   bound <- 1-apply(e, 2, prod)
+#   return(bound)
+# }
+# 
+# # Returns the coupling bound when 
+# getE <- function(k, i, m, D){
+#   q <- -2^(-k)*abs(m[i])/(sqrt(3)*D[i,i])
+#   e <- 2*pnorm(q)
+#   return(e)
+# }
+# 
+# getm <- function(A, D, d){
+#   L <- A-D
+#   MM <- L %*% inv(A)
+#   m <- (diag(d)-MM) %*% (X0-Y0)
+#   return(m)
+# }
+```
+
+
+## Example 1
+```{r}
+d <- 3
+k <- 1:10
+M <- matrix(rep(0.5, d^2), nrow= d)
+diag(M) <- 1
+colnames(M) <- c("V1", "V2", "V3")
+rownames(M) <- colnames(M)
+X0 <- c(1,2,3)
+Y0 <- c(6,5,4)
+```
+
+```{r}
+# Upper bound for sample AR normal process
+bound <- getBound(k, M, X0, Y0)
+df <- data.frame(k, bound)
+df %>%
+  filter(k>0) %>%
+  ggplot(aes(x=k, y=bound)) +
+  geom_line() +
+  labs(title = "Upper bound on the TV distance of two AR normal processes", subtitle = "When the dim = 3, corr_ij = 0.5",
+       y = "Upper bound on TV distance", x = "iteration")
+```
+
+# Example 2 
+Find the minimum value of $n$ such that $||X_n(d)-X'_n(d)||\leq 0.01$.
+
+To check Cholesky decomposition use this website: https://matrixcalc.org/en/#Cholesky-decomposition%28%7B%7B1,1/5,3/10%7D,%7B1/5,1,2/5%7D,%7B3/10,2/5,1%7D%7D%29
+```{r}
+# dimension <- 2:1000 # dimension of matrix
+# n <- rep(2,1001) # minimum number of iterations needed to get TV less than 0.01
+# th <- 0.01
+# for(di in dimension){
+#   k <- n[di]
+#   bound <- 1
+#   while(bound > th){
+#     k <- k+1
+#     M <- matrix(rep(0.5, di^2), nrow= di)
+#     diag(M) <- 1
+#     X0 <- rep(0,di)
+#     Y0 <- rep(1/sqrt(di),di) # |X0-Y0| = 1
+#     bound <- getBound(k, M, X0, Y0)
+#   }
+#   n[di] <- k
+#   n[di+1] <- k-1
+# }
+```
+
+```{r}
+d <- c(2,10,50, 100)
+k <- 1:25
+bound <- matrix(0, nrow = length(k), ncol = length(d))
+for(i in 1:length(d)){
+  M <- matrix(rep(0.5, d[i]^2), nrow= d[i])
+  diag(M) <- 1
+  X0 <- rep(0,d[i])
+  Y0 <- rep(1,d[i]) # |X0-Y0| = 1
+  bound[,i] <- getBound(k, M, X0, Y0)
+}
+```
+
+```{r}
+df <- data.frame(k, bound)
+colnames(df) <- c("iteration", d)
+df %>% 
+  pivot_longer(cols = -iteration, names_to = "dimension", values_to = "bound") %>% 
+  ggplot(aes(x=iteration, y=bound, col=dimension)) +
+  geom_line() +
+  labs(title = "Upper bound on the total variation distance for an AR normal process", subtitle = "Over varying dimensions",
+       y = "Total variation distance", x = "Number of iterations")
+```
+
+```{r}
+bound
+```
+
+# Calculate the chain moment generating function.
+
+Suppose that $\theta_{1,n}$ is normally distributed.
+```{r}
+m <- function(t, mu, sigma){
+  return(exp(mu*t + sigma^2*t^2/2))
+}
+```
+
+```{r}
+N <- 100
+mu = 0.5
+sigma = 0.01
+K <- 10
+d <- 10
+bound = 1:N
+bound[1] = m(K*d,mu, sigma)
+for (i in 2:N){
+  bound[i] = m(log(bound[i-1]),mu, sigma)
+}
+```
+
+```{r}
+t <- K*d
+t
+mu*t + sigma^2*t^2/2
+```
+
+```{r}
+plot(bound[20:N], type="l")
+```
+```{r}
+library(bayesAB)
+```
+
+```{r}
+plotInvGamma(2, 100)
+```
+```{r}
+plotInvGamma(2, 10)
+```
+```{r}
+plotInvGamma(2, 0.1)
+```
+```{r}
+library(invgamma)
+```
+
+```{r}
+x <- seq(0.01, 100, length=1000)
+fx1 <- dinvgamma(x, shape=100, rate=100)
+fx10 <- dinvgamma(x, shape=100, rate=1000)
+fx100 <- dinvgamma(x, shape=100, rate=10000)
+df <- data.frame(x, fx1, fx10, fx100)
+
+df %>%
+  select(x, fx10, fx100) %>% 
+  pivot_longer(cols = starts_with("fx"), names_to = "rate", values_to = "density") %>% 
+  ggplot(aes(x=x, y=density, col=rate)) +
+  geom_line()+
+  labs(title="Inverse gamma density for different rates", subtitle = "For fixed shape = 100")
+```
+```{r}
+df %>% 
+  pivot_longer(y:z,names_to = "pdf", values_to = "density")
+```
+```{r}
+x <- seq(-5, 8, length=1000)
+dens0 <- dnorm(x, 0, 1)
+dens2 <- dnorm(x, 2, 1)
+cum0 <- cumsum(dens0)
+cum2 <- cumsum(dens2)
+
+df <- data.frame(x, dens0, dens2, cum0, cum2)
+
+df %>%
+  select(x, dens0, dens2) %>% 
+  pivot_longer(cols = dens0:dens2, names_to = "rate", values_to = "density") %>% 
+  ggplot(aes(x=x, y=density, col=rate)) +
+  geom_line()+
+  geom_vline(xintercept = 1)
+```
+```{r}
+df %>%
+  select(x, cum0, cum2) %>% 
+  pivot_longer(cols = cum0:cum2, names_to = "rate", values_to = "density") %>% 
+  ggplot(aes(x=x, y=density, col=rate)) +
+  geom_line()+
+  geom_vline(xintercept = 1)
+```
+```{r}
+a <- 0.75
+n <- 1000
+B <- rbeta(n,a+1/2, a-1/2)
+X <- rep(0,n)
+Y <- rep(0,n)
+X[1] <- 0.1; Y[1] <- 0.6
+for (i in 2:n){
+  X[i] <-4*B[i]*X[i-1]*(1-X[i-1])
+  Y[i] <-4*B[i]*Y[i-1]*(1-Y[i-1])
+}
+D <- X-Y
+
+```
+
+```{r}
+plot(D)
+```
+
+```{r}
+a <- 0.75
+n <- 1000
+X <- rep(0,n)
+Y <- rep(0,n)
+X[1] <- 0.1; Y[1] <- 10.6
+for (i in 2:n){
+  X[i] <-X[i-1]/2 + sin(X[i-1])/2
+  Y[i] <-Y[i-1]/2 + sin(Y[i-1])/2
+}
+D <- X-Y
+
+```
+
+```{r}
+plot(X)
+plot(Y)
+plot(D)
+```
+
+
+```{r}
+x <- seq(0,10,by=0.01)
+p <- 1-pnorm(x, mean=5, sd=1)
+a <- 10; b<-1
+alg_tail <- a/(x^b)
+plot(x,alg_tail,type="l",col="red")
+lines(x,p,col="green")
+```
+```{r}
+Z <- rexp(10000)
+X0 <- 3
+X <- Z
+X[1] <- X0
+for(i in 2:length(Z)){
+  X[i] <- 0.5*X[i-1] + Z[i]+ 3
+}
+hist(X)
+```
+
+```{r}
+x0=1
+y0=0
+n = 15
+actualBound = 1:n; upperBound = 1:n
+for(i in 1:n){
+  actualBound[i] <- 1-2*pnorm(-abs(x0-y0)/(2*sqrt(4^i-1)))
+  #actualBound[i] <- 1-2*pnorm(-2^(-i-1)*abs(x0-y0)*(1-4^(-i))^(-0.5))
+  upperBound[i] <- sqrt(2/(3*pi))*abs(x0-y0)/2^i
+}
+df <- data.frame(Iteration=1:n, Actual=actualBound, Estimate=upperBound)
+
+df %>% 
+  pivot_longer(cols = Actual:Estimate, names_to = "Bound", values_to = "value") %>% 
+  ggplot(aes(x=Iteration, y=value, col=Bound)) +
+  geom_line()+
+  geom_point() + 
+  labs(fill = "Bound", y="Total Variation", title = "Upper bound vs actual total variation distance", subtitle = "For the autoregressive normal process") +
+  theme(legend.position = "bottom")
+```
+```{r}
+df
+```
+# Simulating Dirichlet process
+
+```{r}
+n <- 1000
+X <- rnorm(n,5,1)
+Y <- rbeta(n, 5,1)
+D <- 1:(n+1)
+for(i in 2:(n+1)){
+  D[i] <- (1-Y[i])*X[i] + Y[i]*D[i-1]
+}
+```
+
+```{r}
+D
+```
+

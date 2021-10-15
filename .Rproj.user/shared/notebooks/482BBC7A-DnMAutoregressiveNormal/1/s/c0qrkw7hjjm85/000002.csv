@@ -1,0 +1,8 @@
+"0","  d <- length(X0)"
+"0","  e <- matrix(rep(0,d*length(k)), ncol = length(k))"
+"0",""
+"0","  A <- t(chol(M)) #A = D + L where D is a diagonal matrix, L a lower triangular matrix (with zeros along diagonal)"
+"0","  D <- diag(diag(A), nrow=d, ncol=d) # D provides the variances for each coordinate"
+"0","  m <- getm(A, D, d) # m provides the mean for each coordinate"
+"2","Error in A - D : non-conformable arrays
+"

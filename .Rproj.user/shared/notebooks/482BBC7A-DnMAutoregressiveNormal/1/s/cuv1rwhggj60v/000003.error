@@ -1,0 +1,1 @@
+{"frames":[{"character_number":0,"end_character_number":0,"end_line_number":0,"file":"","func":"getBound(k, M, X0, Y0)","line_number":0},{"character_number":3,"end_character_number":20,"end_line_number":7,"file":"","func":"getm(A, D, d)","line_number":7}],"message":"Error in A - D : non-conformable arrays\n"}

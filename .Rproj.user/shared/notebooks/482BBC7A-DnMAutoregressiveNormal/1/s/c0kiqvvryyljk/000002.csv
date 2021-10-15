@@ -1,0 +1,2 @@
+"0","# Upper bound for sample AR normal process"
+"0","bound <- getBound(k, mycor, X0, Y0)"

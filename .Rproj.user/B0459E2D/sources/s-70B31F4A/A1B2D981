@@ -1,0 +1,26 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1623330177502.000,
+    "dirty" : true,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "A1B2D981",
+    "lastKnownWriteTime" : 1624452288,
+    "last_content_update" : 1624559464641,
+    "path" : "C:/Projects/SabrinaSixta/public_html/resources/pdf/Research/Research proposal/DnMAutoregressiveNormal.Rmd",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "838,1",
+        "last_setup_crc32" : "70B31F4Acd8d0e6e",
+        "scrollLine" : "822"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}

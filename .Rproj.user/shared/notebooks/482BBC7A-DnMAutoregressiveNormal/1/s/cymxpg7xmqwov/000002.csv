@@ -1,0 +1,4 @@
+"0","df %>% "
+"0","  pivot_longer(y:z,names_to = ""pdf"", values_to = ""density"")"
+"2","Error in is_string(x) : object 'y' not found
+"

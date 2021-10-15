@@ -1,0 +1,6 @@
+"0","df %>%"
+"0","  select(x, cum0, cum2) %>% "
+"0","  pivot_longer(cols = cum0:cum2, names_to = ""rate"", values_to = ""density"") %>% "
+"0","  ggplot(aes(x=x, y=density, col=rate)) +"
+"0","  geom_line()+"
+"0","  geom_vline(xintercept = 1)"

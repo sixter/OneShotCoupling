@@ -1,0 +1,7 @@
+"0","df <- data.frame(k, bound)"
+"0","df %>% "
+"0","  filter(k>1500) %>% "
+"0","  ggplot(aes(x=k, y=bound)) +"
+"0","  geom_line() +"
+"0","  labs(title = ""Upper bound on the convergence rate"", subtitle = ""When d=n, d=dimension, n=number of iterations"", "
+"0","       y = ""Convergence rate upper bound"", x = ""n (number of iterations)"")"
