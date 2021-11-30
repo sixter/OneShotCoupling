@@ -74,10 +74,17 @@ df <- data.frame(x, fx1, fx10, fx100)
 
 df %>%
   select(x, fx1, fx10, fx100) %>% 
-  pivot_longer(cols = starts_with("fx"), names_to = "rate", values_to = "density") %>% 
-  ggplot(aes(x=x, y=density, col=rate)) +
+  pivot_longer(cols = starts_with("fx"), names_to = "beta", values_to = "density") %>%
+  mutate(beta = gsub("fx", "", beta)) %>% 
+  ggplot(aes(x=x, y=density, col=beta)) +
   geom_line()+
-  labs(title="Inverse gamma density for different rates", subtitle = "For fixed shape = 100")
+  labs(title="Inverse gamma density for different rates", subtitle = "For fixed shape, alpha = 100")
+```
+```{r}
+df %>%
+  select(x, fx1, fx10, fx100) %>% 
+  pivot_longer(cols = starts_with("fx"), names_to = "beta", values_to = "density") %>% 
+  mutate(beta1 = gsub("fx", "", beta))
 ```
 
 Numerical example
@@ -156,8 +163,9 @@ df %>%
   ggplot(aes(x=Iteration, y=value, col=Bound)) +
   geom_line()+
   geom_point() + 
-  labs(fill = "Bound", y="Total Variation", title = "Upper bound vs actual total variation distance", subtitle = "For the autoregressive normal process") +
-  theme(legend.position = "bottom")
+  labs(col = "", y="Total Variation", title = "Upper bound vs actual total variation distance", subtitle = "For the autoregressive normal process") +
+  theme(legend.position = "bottom") +
+  scale_colour_discrete(labels = c("Actual", "Theoretical upper bound"))
 ```
 
 Calculation to find the number of iterations needed to guarantee a TV of $0.01$ when $x_0=0$ and $x'_0=1$.
@@ -191,7 +199,6 @@ sigma <- m
 A <- m
 
 eigenM <- eigen(m)
-#D <- diag(eigenM$values)
 P <- eigenM$vectors
 ```
 
@@ -239,9 +246,6 @@ k <- 11 # no. of iterations
 X <- matrix(0, nrow = n, ncol = k)
 Y <- matrix(0, nrow = n, ncol = k)
 
-# oX <- matrix(0, nrow = n, ncol = k)
-# oY <- matrix(0, nrow = n, ncol = k)
-
 a <- 1
 b <- 0.5
 X[,1] <- 0.1
@@ -273,7 +277,7 @@ df %>%
   ggplot(aes(x=Iteration, y=val, col=Bound)) +
   geom_line() +
   geom_point() +
-  labs(fill = "Bound", y="Total Variation", title = "Theoretical upper bound vs simulated estimate of total variation distance", subtitle = "For the LARCH process") +
+  labs(col = "", y="Total Variation", title = "Theoretical upper bound vs simulated estimate of total variation distance", subtitle = "For the LARCH process") +
   theme(legend.position = "bottom") +
   scale_x_continuous(n.breaks = 10) +
   scale_colour_discrete(labels = c("Simulated estimate", "Theoretical upper bound"))
@@ -313,7 +317,6 @@ for(i in 1:k){
 ```
 
 ```{r}
-
 df <- data.frame(Iteration = 1:(k-1), Actual = tv[2:k], Estimate = 0.5^(1:(k-1)))
 
 df %>%
@@ -321,7 +324,7 @@ df %>%
   ggplot(aes(x=Iteration, y=val, col=Bound)) +
   geom_line() +
   geom_point() +
-  labs(fill = "Bound", y="Total Variation", title = "Theoretical upper bound vs simulated estimate of total variation distance", subtitle = "For the asymmetric ARCH process") +
+  labs(col="", y="Total Variation", title = "Theoretical upper bound vs simulated estimate of total variation distance", subtitle = "For the asymmetric ARCH process") +
   theme(legend.position = "bottom") +
   scale_x_continuous(n.breaks = 10) +
   scale_colour_discrete(labels = c("Simulated estimate", "Theoretical upper bound"))
@@ -348,9 +351,7 @@ X[,1] <- 0.1
 Y[,1] <- -0.1
 oX[,1] <- 0.01
 oY[,1] <- 0.1
-C <- sqrt( (b*abs(X[1,1]^2-Y[1,1]^2) + c*abs(oX[1,1]^2-oY[1,1]^2)) / (a * (b+c)) )
-# oX[,1] <- 0.1
-# oY[,1] <- 4
+C <- sqrt( (b*abs(X[1,1]^2-Y[1,1]^2) + c*abs(oX[1,1]^2-oY[1,1]^2)) / a )
 
 for (i in 1:n){
   Z <- rnorm(k)
@@ -380,7 +381,7 @@ df %>%
   pivot_longer(Actual:Estimate, names_to = "Bound", values_to = "val") %>%
   ggplot(aes(x=Iteration, y=val, col=Bound)) +
   geom_line() +
-  labs(fill = "Bound", y="Total Variation", title = "Theoretical upper bound vs simulated estimate of total variation distance", subtitle = "For the GARCH process") +
+  labs(col = "", y="Total Variation", title = "Theoretical upper bound vs simulated estimate of total variation distance", subtitle = "For the GARCH process") +
   theme(legend.position = "bottom") +
   scale_x_continuous(n.breaks = 10) +
   scale_colour_discrete(labels = c("Simulated estimate", "Theoretical upper bound"))
